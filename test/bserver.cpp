@@ -15,7 +15,7 @@
  struct sockaddr_in sockaddr;
  char buff[MAXLINE];
  int n;
-
+ char *copy = "copy that";
  memset(&sockaddr,0,sizeof(sockaddr));
 
  sockaddr.sin_family = AF_INET;
@@ -30,19 +30,22 @@
 
 
  printf("Please wait for the client information\n");
+ if((connfd = accept(listenfd,(struct sockaddr*)NULL,NULL))==-1)
+ {
+ 	printf("accpet socket error: %s errno :%d\n",strerror(errno),errno);
+	exit(0);
+ }
 
 	 for(;;)
 	 {
-		 if((connfd = accept(listenfd,(struct sockaddr*)NULL,NULL))==-1)
-		 {
-		 	printf("accpet socket error: %s errno :%d\n",strerror(errno),errno);
-			continue;
-		 }
 
 		 n = recv(connfd,buff,MAXLINE,0);
-		 buff[n] = '\0';
-		 printf("recv msg from client:%s",buff);
-		 close(connfd);
-	 }
+		 buff[n+1] = '\0';
+		 printf("recv msg from client:%s\n",buff);
+		 send(connfd,copy,strlen(copy),0);
+		 memset(buff,0,sizeof(buff));	 
+	}
+  close(connfd);
    close(listenfd);
+	return 0;
  }
