@@ -39,4 +39,6 @@ class Http{
         struct sockaddr_in sockaddr;
         std::string recv_content;
         std::string send_content;
+        std::string http_method;
+        std::string http_url;
 }
