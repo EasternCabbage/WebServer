@@ -1,3 +1,4 @@
+#include <sys/socket.h>
 
 enum HttpPraseState{
     NO_REQUEST = 0,
@@ -31,14 +32,13 @@ class Http{
         HttpRequestMethod HttpPraseMethod();
         void HttpLoop();
         void HttpResponse();
-    public:
+ /*   public:
         Http();
-        ~Http();
+        ~Http(); */
     private:
         int sfd,cfd;
-        struct sockaddr_in sockaddr;
         std::string recv_content;
         std::string send_content;
         std::string http_method;
         std::string http_url;
-}
+};
