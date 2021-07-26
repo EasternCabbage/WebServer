@@ -67,7 +67,7 @@ void Http::HttpLoop(){
             std::cout << buf << "\nsuccussful\n"<<std::endl;
 
             char response[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";//HTTP响应
-            int s = send(cfd,buf,strlen(response),0);//发送响应
+            int s = send(cfd,response,strlen(response),0);//发送响应
 
             int fd = open("home.html",O_RDONLY);//消息体
             sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
