@@ -31,21 +31,48 @@ void Http::HttpInit(){
 
     std::cout<<"Please wait for the client information\n"<<std::endl;
 }
-/*
-HtpPraseState Http::HttpPraseStatu(){
-    int length = recv(cfd,recv_content,1024,0);
-    recv_content.replace(0,length+1,'\0')
-    std::cout << "msg from client:" << recv_content << "\n"<<std::endl;
-    std::string::iterator iter = recv_content.begin();
-    for( ; iter < recv_content.end() ; iter++)
-    {
-        if(*iter=='\n');
-        
-    }
 
-    std::string method = recv_content;
+std::string HttpFirstLine(){
+    int line_end;
+    line_end = recv_content.find("\n");
+    http_firstline = recv_content.substr(0, line_end);
 }
-*/
+HtpPraseState Http::HttpPraseMethod(){
+    int line_end;
+    line_end = http_firstline.find(" ");
+    http_method = http_fistline.substr(0,line_end);
+    
+}
+std::string std::string HttpPraseUrl(){
+    int begin = 0,end = 0;
+    begin = http_firstline.find(" ");
+    end = http_firstline.find(" ",seek + 1);
+    http_url = http_firstline.substr(begin + 1,end - begin);
+}
+
+HtpPraseState Http::HttpPraseStatu(){
+    int seek =0;
+    seek = http_firstline.find(" ");
+    seek = http_firstline.find(" ",seek + 1);
+    http_url = http_firstline,substr(seek + 1);
+    
+}
+
+void do_request(){
+
+    switch(http_method){
+        case GET:
+        {
+
+        }
+        case POST:
+        {
+
+        }
+    }
+}
+
+
 void Http::HttpLoop(){
     while(1){
         struct sockaddr_in client;
@@ -64,6 +91,12 @@ void Http::HttpLoop(){
             char buf[1024];
             recv(cfd,buf,1024,0);
             buf[strlen(buf)+1]='\0';
+            recv_content = buf;
+            HttpFirstLine();
+            HttpPraseMethod();
+            HttpPraseUrl();
+            HttpPraseStatu();
+            do_request();
             std::cout << buf << "\nsuccussful\n"<<std::endl;
 
             char response[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";//HTTP响应

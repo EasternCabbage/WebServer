@@ -28,8 +28,12 @@ enum HttpRequestMethod{
 class Http{
     public:
         void HttpInit();
+        std::string HttpFirstLine();
         HttpPraseState HttpPraseStatu();
         HttpRequestMethod HttpPraseMethod();
+        std::string HttpPraseUrl();
+        void do_request();
+
         void HttpLoop();
         void HttpResponse();
  /*   public:
