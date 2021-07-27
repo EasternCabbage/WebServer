@@ -32,44 +32,60 @@ void Http::HttpInit(){
     std::cout<<"Please wait for the client information\n"<<std::endl;
 }
 
-std::string HttpFirstLine(){
+void Http::HttpFirstLine(){
     int line_end;
     line_end = recv_content.find("\n");
-    http_firstline = recv_content.substr(0, line_end);
+    first_line = recv_content.substr(0, line_end);
+   
 }
-HtpPraseState Http::HttpPraseMethod(){
+void Http::HttpPraseMethod(){
     int line_end;
-    line_end = http_firstline.find(" ");
-    http_method = http_fistline.substr(0,line_end);
-    
+    std::string result;
+    line_end = first_line.find(" ");
+    result = first_line.substr(0,line_end);
+    if(result.compare("post")){
+        method = POST;
+    }
+    else if(result.compare("get")){
+        method = GET;
+    }
 }
-std::string std::string HttpPraseUrl(){
-    int begin = 0,end = 0;
-    begin = http_firstline.find(" ");
-    end = http_firstline.find(" ",seek + 1);
-    http_url = http_firstline.substr(begin + 1,end - begin);
-}
-
-HtpPraseState Http::HttpPraseStatu(){
-    int seek =0;
-    seek = http_firstline.find(" ");
-    seek = http_firstline.find(" ",seek + 1);
-    http_url = http_firstline,substr(seek + 1);
-    
-}
-
-void do_request(){
-
-    switch(http_method){
+void Http::HttpPraseUrl(){
+    switch(method){
         case GET:
         {
-
+                int begin = 0 ,end = 0;
+                begin = first_line.find(" ");
+                end = first_line.find("?");
+                http_url = first_line.substr(begin + 1,end - 1);
         }
         case POST:
         {
-
+            int begin = 0,end = 0;
+                begin = first_line.find(" ");
+                end = first_line.find(" ",end + 1);
+                http_url = first_line.substr(begin + 1,end - begin);
         }
+        default:
+            http_url.erase();
     }
+    
+}
+
+void Http::HttpPraseStatu(){
+    int seek =0;
+    seek = first_line.find(" ");
+    seek = first_line.find(" ",seek + 1);
+    http_url = first_line.substr(seek + 1);
+    
+}
+
+void Http::do_request(){
+    char response[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";//HTTP响应
+    int s = send(cfd,response,strlen(response),0);//发送响应
+    int fd = open(http_url.c_str(),O_RDONLY);//消息体
+    sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
+    close(fd);
 }
 
 
@@ -93,19 +109,17 @@ void Http::HttpLoop(){
             buf[strlen(buf)+1]='\0';
             recv_content = buf;
             HttpFirstLine();
+            std::cout << first_line;
             HttpPraseMethod();
+            std::cout << method;
+
             HttpPraseUrl();
-            HttpPraseStatu();
+            std::cout << http_url;
+            //HttpPraseStatu();
             do_request();
-            std::cout << buf << "\nsuccussful\n"<<std::endl;
-
-            char response[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";//HTTP响应
-            int s = send(cfd,response,strlen(response),0);//发送响应
-
-            int fd = open("home.html",O_RDONLY);//消息体
-            sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
+            //std::cout << buf << "\nsuccussful\n"<<std::endl;
             memset(buf,0,sizeof(buf));
-            close(fd);
+            
             close(cfd);
         }
     }

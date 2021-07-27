@@ -11,7 +11,7 @@ enum HttpPraseState{
     CLOSED_CONNECTION
 
 };
-enum HttpRequestMethod{
+enum Method{
     GET = 0,
     POST,
     HEAD,
@@ -28,10 +28,10 @@ enum HttpRequestMethod{
 class Http{
     public:
         void HttpInit();
-        std::string HttpFirstLine();
-        HttpPraseState HttpPraseStatu();
-        HttpRequestMethod HttpPraseMethod();
-        std::string HttpPraseUrl();
+        void HttpFirstLine();
+        void HttpPraseStatu();
+        void HttpPraseMethod();
+        void HttpPraseUrl();
         void do_request();
 
         void HttpLoop();
@@ -43,6 +43,7 @@ class Http{
         int sfd,cfd;
         std::string recv_content;
         std::string send_content;
-        std::string http_method;
+        std::string first_line;
         std::string http_url;
+        Method method;
 };
