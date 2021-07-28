@@ -43,10 +43,10 @@ void Http::HttpPraseMethod(){
     std::string result;
     line_end = first_line.find(" ");
     result = first_line.substr(0,line_end);
-    if(result.compare("post")){
+    if(result.compare("POST") == 0){
         method = POST;
     }
-    else if(result.compare("get")){
+    else if(result.compare("GET") == 0){
         method = GET;
     }
 }
@@ -56,18 +56,29 @@ void Http::HttpPraseUrl(){
         {
                 int begin = 0 ,end = 0;
                 begin = first_line.find(" ");
-                end = first_line.find("?");
-                http_url = first_line.substr(begin + 1,end - 1);
+                end = first_line.find(" ",begin + 1);
+                http_url = first_line.substr(begin+1 , end-begin-1);
+                
+                std::size_t found = http_url.find("?");
+                if(found != std::string::npos)
+                    http_url.pop_back();
+        
+                break;
         }
         case POST:
         {
             int begin = 0,end = 0;
                 begin = first_line.find(" ");
                 end = first_line.find(" ",end + 1);
-                http_url = first_line.substr(begin + 1,end - begin);
+                http_url = first_line.substr(begin + 1, end-begin-1);
+                break;
         }
         default:
+        {
             http_url.erase();
+            break;
+        }
+            
     }
     
 }
@@ -81,11 +92,32 @@ void Http::HttpPraseStatu(){
 }
 
 void Http::do_request(){
-    char response[520]="HTTP/1.1 200 ok\r\nconnection: close\r\n\r\n";//HTTP响应
-    int s = send(cfd,response,strlen(response),0);//发送响应
-    int fd = open(http_url.c_str(),O_RDONLY);//消息体
-    sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
-    close(fd);
+        std::string response="HTTP/1.1 200 ok\r\n/connection: close\r\n\r\n";
+    if(http_url.compare("/") == 0){
+        
+        int s = send(cfd,response.c_str(),response.length(),0);//发送响应
+        std::cout << "sending index.html" <<std::endl;
+        int fd = open("index.html",O_RDONLY);//消息体
+        sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
+        close(fd);
+    }else{
+        std::string::size_type idx = http_url.find("png");
+        if(idx != std::string::npos)
+            response.append("Content-Type: image/png\r\n");
+
+        int s = send(cfd,response.c_str(),response.length(),0);//发送响应
+        std::cout << "sending "<< http_url<<std::endl;
+        http_url.insert(0,".");
+        std::cout << "http_url.c_str():"<<http_url.c_str() <<std::endl;
+        int fd = open(http_url.c_str(),O_RDONLY);//消息体
+        if(fd == -1)
+            std::cout <<"open file error:"<<__func__<<std::endl;
+        
+        sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
+        close(fd);
+    }
+    
+    
 }
 
 
@@ -93,7 +125,7 @@ void Http::HttpLoop(){
     while(1){
         struct sockaddr_in client;
         socklen_t client_addrlength = sizeof(client);
-
+        std::cout<<"one step before accept\n"<<std::endl;
         if((cfd = accept(sfd,(struct sockaddr*)&client,&client_addrlength))==-1)//进入接收阻塞状态，直到收到信息
         {
             std::cout<<"accpet socket error:"<<strerror(errno)<<errno<<std::endl;
@@ -101,7 +133,7 @@ void Http::HttpLoop(){
         }
 
         if(cfd < 0){
-            std::cout << "error" << std::endl;
+            std::cout << "error\n" << std::endl;
         }
         else{
             char buf[1024];
@@ -109,12 +141,13 @@ void Http::HttpLoop(){
             buf[strlen(buf)+1]='\0';
             recv_content = buf;
             HttpFirstLine();
-            std::cout << first_line;
+            std::cout << "first line:"<<first_line<<std::endl;
             HttpPraseMethod();
-            std::cout << method;
+            std::cout << "method:"<<method<<std::endl;
 
             HttpPraseUrl();
-            std::cout << http_url;
+            std::cout << "http_url:"<<http_url<<std::endl;
+            std::cout << "http_url_length:" <<http_url.length()<<std::endl;
             //HttpPraseStatu();
             do_request();
             //std::cout << buf << "\nsuccussful\n"<<std::endl;
