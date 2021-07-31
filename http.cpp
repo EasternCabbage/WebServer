@@ -92,29 +92,72 @@ void Http::HttpPraseStatu(){
 }
 
 void Http::do_request(){
-        std::string response="HTTP/1.1 200 ok\r\n/connection: close\r\n\r\n";
+    struct stat statbuf;
+    
+
+    std::string response="HTTP/1.1 200 ok\r\n/connection: close\r\n\r\n";
     if(http_url.compare("/") == 0){
         
-        int s = send(cfd,response.c_str(),response.length(),0);//发送响应
+        int s = send(cfd,response.c_str(),response.length(),0);//发送http响应头
         std::cout << "sending index.html" <<std::endl;
+
         int fd = open("index.html",O_RDONLY);//消息体
-        sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
+        if(stat("index.html",&statbuf)){
+            perror("stat");
+            exit(EXIT_FAILURE);
+        }
+
+        sendfile(cfd,fd,NULL,2500);
+        //fwrite(cfd,fd,NULL,statbuf.st_size);//零拷贝发送消息体
+        
         close(fd);
     }else{
         std::string::size_type idx = http_url.find("png");
         if(idx != std::string::npos)
-            response.append("Content-Type: image/png\r\n");
+            response += "Content-Type: image/png\r\n";
 
         int s = send(cfd,response.c_str(),response.length(),0);//发送响应
         std::cout << "sending "<< http_url<<std::endl;
         http_url.insert(0,".");
+
+        if(stat(http_url.c_str(),&statbuf)){
+            perror("stat");
+            exit(EXIT_FAILURE);
+        }
         std::cout << "http_url.c_str():"<<http_url.c_str() <<std::endl;
-        int fd = open(http_url.c_str(),O_RDONLY);//消息体
-        if(fd == -1)
-            std::cout <<"open file error:"<<__func__<<std::endl;
+        std::string::size_type ai = http_url.find("png");
+        FILE *fd;
+        if(ai != std::string::npos){
+            
+            if((fd = fopen(http_url.c_str(),"r")) == NULL);{
+                std::cout << "openfile error" <<std::endl;
+                exit(1);
+            }
+            int size;
+            fseek(fd, 0, SEEK_END);
+            size = ftell(fd);
+            fseek(fd,0,SEEK_SET);
+            unsigned char msg[size];
+            fread(msg, 1 ,size, fd);
+            write(cfd,msg,size);
+        }
+        else{
+            fd = fopen(http_url.c_str(),"r");//消息体
+            int size;
+            fseek(fd, 0, SEEK_END);
+            size = ftell(fd);
+            fseek(fd,0,SEEK_SET);
+            unsigned char msg[size];
+            fread(msg, 1 ,size, fd);
+            write(cfd,msg,size);
+           // sendfile(cfd,fd,NULL,statbuf.st_size);//零拷贝发送消息体
+        }
+         if(fd == NULL)
+        {
+             std::cout <<"open file error:"<<__func__<<std::endl;
+        }     
         
-        sendfile(cfd,fd,NULL,2500);//零拷贝发送消息体
-        close(fd);
+        fclose(fd);
     }
     
     
