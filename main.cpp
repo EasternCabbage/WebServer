@@ -1,7 +1,7 @@
 #include <iostream>
 #include "http.h"
 
-int main(int agrc,char *argv[]){
+int main(int argc,char *argv[]){
     Http http;
     http.HttpInit();
     http.HttpLoop();

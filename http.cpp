@@ -16,7 +16,6 @@ void Http::HttpInit(){
     //用作储存sock相关信息的结构体
     int n;
     struct sockaddr_in sockaddr;
-    std::string string = "copy that";
     memset(&sockaddr,0,sizeof(sockaddr));//清空sockaddr的内容
 
     sockaddr.sin_family = AF_INET;//AF_INET代表socket范围是IPV4的网络
@@ -36,7 +35,7 @@ void Http::HttpFirstLine(){
     int line_end;
     line_end = recv_content.find("\n");
     first_line = recv_content.substr(0, line_end);
-   
+   std::cout << "first line:"<<first_line<<std::endl;
 }
 void Http::HttpPraseMethod(){
     int line_end;
@@ -59,8 +58,7 @@ void Http::HttpPraseUrl(){
                 end = first_line.find(" ",begin + 1);
                 http_url = first_line.substr(begin+1 , end-begin-1);
                 
-                std::size_t found = http_url.find("?");
-                if(found != std::string::npos)
+                if(http_url.find("?") != std::string::npos)
                     http_url.pop_back();
         
                 break;
@@ -80,7 +78,8 @@ void Http::HttpPraseUrl(){
         }
             
     }
-    
+    std::cout << "http_url:"<<http_url<<std::endl;
+    std::cout << "http_url_length:" <<http_url.length()<<std::endl;
 }
 
 void Http::HttpPraseStatu(){
@@ -88,7 +87,7 @@ void Http::HttpPraseStatu(){
     seek = first_line.find(" ");
     seek = first_line.find(" ",seek + 1);
     http_url = first_line.substr(seek + 1);
-    
+    std::cout << "method:"<<method<<std::endl;
 }
 
 void Http::do_request(){
@@ -112,8 +111,7 @@ void Http::do_request(){
         
         close(fd);
     }else{
-        std::string::size_type idx = http_url.find("png");
-        if(idx != std::string::npos)
+        if(http_url.find("png") != std::string::npos)
             response += "Content-Type: image/png\r\n";
 
         int s = send(cfd,response.c_str(),response.length(),0);//发送响应
@@ -125,9 +123,8 @@ void Http::do_request(){
             exit(EXIT_FAILURE);
         }
         std::cout << "http_url.c_str():"<<http_url.c_str() <<std::endl;
-        std::string::size_type ai = http_url.find("png");
         FILE *fd;
-        if(ai != std::string::npos){
+        if(http_url.find("png") != std::string::npos){
             
             if((fd = fopen(http_url.c_str(),"r")) == NULL);{
                 std::cout << "openfile error" <<std::endl;
@@ -184,13 +181,12 @@ void Http::HttpLoop(){
             buf[strlen(buf)+1]='\0';
             recv_content = buf;
             HttpFirstLine();
-            std::cout << "first line:"<<first_line<<std::endl;
+            
             HttpPraseMethod();
-            std::cout << "method:"<<method<<std::endl;
+            
 
             HttpPraseUrl();
-            std::cout << "http_url:"<<http_url<<std::endl;
-            std::cout << "http_url_length:" <<http_url.length()<<std::endl;
+            
             //HttpPraseStatu();
             do_request();
             //std::cout << buf << "\nsuccussful\n"<<std::endl;
